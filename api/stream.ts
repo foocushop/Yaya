@@ -10,7 +10,7 @@ export default async function handler(req: Request, res: Response) {
   }
 
   try {
-    const userAgent = req.headers['user-agent'] || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
+    const userAgent = "VLC/3.0.18 LibVLC/3.0.18"; // Fix 403: Always pretend to be VLC to IPTV servers
     
     const response = await fetch(url, {
       headers: {
@@ -43,6 +43,7 @@ export default async function handler(req: Request, res: Response) {
           itemUrl = new URL(line, baseUrl).toString();
         }
         
+        // Re-proxy all segments to bypass CORS and User-Agent blocking on the client browser
         return `/api/stream?url=${encodeURIComponent(itemUrl)}`;
       }).join('\n');
       
