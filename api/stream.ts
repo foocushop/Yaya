@@ -10,16 +10,21 @@ export default async function handler(req: Request, res: Response) {
   }
 
   try {
+    const userAgent = req.headers['user-agent'] || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
+    
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "VLC/3.0.18 LibVLC/3.0.18",
+        "User-Agent": userAgent,
         "Accept": "*/*",
         "Connection": "keep-alive"
       }
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch original stream: ${response.status}`);
+      if (response.status === 403) {
+         console.error("403 Forbidden from IPTV Proxy. URL was:", url);
+      }
+      throw new Error(`Failed to fetch original stream: ${response.status} ${response.statusText}`);
     }
     
     const contentType = response.headers.get("content-type") || "";
