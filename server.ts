@@ -20,7 +20,13 @@ async function startServer() {
         const baseUrl = serverUrl.replace(/\/$/, '');
         const targetUrl = `${baseUrl}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
         
-        const response = await fetch(targetUrl);
+        const response = await fetch(targetUrl, {
+          headers: {
+            "User-Agent": "VLC/3.0.18 LibVLC/3.0.18",
+            "Accept": "*/*"
+          }
+        });
+
         if (!response.ok) {
            return res.status(401).json({ error: "Failed to connect to IPTV server. HTTP status: " + response.status });
         }
@@ -53,9 +59,16 @@ async function startServer() {
       const token = authHeader.split(" ")[1];
       const { serverUrl, username, password } = JSON.parse(Buffer.from(token, 'base64').toString('utf-8'));
 
+      const fetchOptions = {
+        headers: {
+          "User-Agent": "VLC/3.0.18 LibVLC/3.0.18",
+          "Accept": "*/*"
+        }
+      };
+
       // Fetch Categories
       const catUrl = `${serverUrl}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=get_live_categories`;
-      const catResponse = await fetch(catUrl);
+      const catResponse = await fetch(catUrl, fetchOptions);
       const catData = await catResponse.json();
       
       const categoriesMap = new Map();
@@ -65,7 +78,7 @@ async function startServer() {
 
       // Fetch Streams
       const streamsUrl = `${serverUrl}/player_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&action=get_live_streams`;
-      const streamsResponse = await fetch(streamsUrl);
+      const streamsResponse = await fetch(streamsUrl, fetchOptions);
       const streamsData = await streamsResponse.json();
 
       if (!Array.isArray(streamsData)) {
@@ -144,10 +157,9 @@ async function startServer() {
       } else if (response.body) {
          // Transform web stream to node readable
          const readable = Readable.fromWeb(response.body as any);
-         // Utilisation d'un buffer mémoire massif (50MB) côté serveur.
-         // Le serveur Vercel/Node téléchargera le segment très rapidement dans sa RAM,
-         // pour ensuite l'envoyer au client, ce qui garantit que le client n'attend pas la source.
-         const passThrough = new PassThrough({ highWaterMark: 50 * 1024 * 1024 });
+         // Utilisation d'un buffer mémoire côté serveur optimisé (10MB) pour les environnements de type Vercel (fonctions Serverless)
+         // Le serveur Vercel/Node téléchargera le segment dans la RAM pour une transmission fluide au client.
+         const passThrough = new PassThrough({ highWaterMark: 10 * 1024 * 1024 });
          readable.pipe(passThrough).pipe(res);
       } else {
         res.status(500).send("No body in response");
