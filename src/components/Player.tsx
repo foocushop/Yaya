@@ -111,6 +111,7 @@ export function Player({ channel }: { channel: Channel | null }) {
         ref={videoRef}
         className="w-full h-full"
         controls
+        autoPlay
         playsInline
         style={{ objectFit: 'contain' }}
       />

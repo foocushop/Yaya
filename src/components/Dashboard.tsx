@@ -16,7 +16,7 @@ export function Dashboard({ user, onLogout, channels }: { user: User, onLogout: 
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
   const categories = useMemo(() => {
-    const cats = new Set(channels.map(c => c.category));
+    const cats = new Set(channels.map(c => c.category || 'Uncategorized'));
     return ['All', ...Array.from(cats)].sort();
   }, [channels]);
 
@@ -27,6 +27,10 @@ export function Dashboard({ user, onLogout, channels }: { user: User, onLogout: 
       return matchCat && matchSearch;
     });
   }, [channels, search, selectedCategory]);
+
+  const displayedChannels = useMemo(() => {
+    return filteredChannels.slice(0, 150); // Prevent lag by rendering up to 150 items only
+  }, [filteredChannels]);
 
   return (
     <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden font-sans">
@@ -79,10 +83,10 @@ export function Dashboard({ user, onLogout, channels }: { user: User, onLogout: 
 
         {/* Channel List */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-1">
-          {filteredChannels.length === 0 ? (
+          {displayedChannels.length === 0 ? (
             <div className="p-4 text-center text-sm text-slate-500">No channels found</div>
           ) : (
-            filteredChannels.map(channel => (
+            displayedChannels.map(channel => (
               <button
                 key={channel.id}
                 onClick={() => setActiveChannel(channel)}
@@ -123,6 +127,12 @@ export function Dashboard({ user, onLogout, channels }: { user: User, onLogout: 
                 </div>
               </button>
             ))
+          )}
+          
+          {filteredChannels.length > 150 && (
+             <div className="p-6 text-center text-xs text-slate-500 opacity-80 border-t border-slate-800/50 mt-4">
+                Affichage de 150 chaînes sur {filteredChannels.length}.<br/>Utilisez la barre de recherche ou les filtres de catégorie.
+             </div>
           )}
         </div>
 

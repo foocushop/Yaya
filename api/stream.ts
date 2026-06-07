@@ -23,32 +23,39 @@ export default async function handler(req: Request, res: Response) {
     }
     
     const contentType = response.headers.get("content-type") || "";
-    if (contentType) res.setHeader("Content-Type", contentType);
-    
-    const isM3u8 = url.includes('.m3u8') || contentType.includes('mpegurl');
+    const isM3u8 = url.includes('.m3u8') || contentType.includes('mpegurl') || contentType.includes('application/x-mpegURL');
 
     if (isM3u8) {
+      res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
       const text = await response.text();
       const baseUrl = new URL(url);
       
       const rewritten = text.split('\n').map((line: string) => {
         if (line.startsWith('#') || line.trim() === '') return line;
 
-        let itemUrl;
-        if (line.startsWith('http')) {
-          itemUrl = line;
-        } else {
+        let itemUrl = line;
+        if (!line.startsWith('http')) {
           itemUrl = new URL(line, baseUrl).toString();
         }
         
         return `/api/stream?url=${encodeURIComponent(itemUrl)}`;
       }).join('\n');
       
-      res.send(rewritten);
+      res.status(200).send(rewritten);
     } else if (response.body) {
+       if (contentType) res.setHeader("Content-Type", contentType);
        const readable = Readable.fromWeb(response.body as any);
        const passThrough = new PassThrough({ highWaterMark: 10 * 1024 * 1024 });
+       
+       readable.on('error', (err) => console.error("Source Readable error:", err));
+       passThrough.on('error', (err) => console.error("PassThrough error:", err));
+
        readable.pipe(passThrough).pipe(res);
+       
+       req.on('close', () => {
+          readable.destroy();
+          passThrough.destroy();
+       });
     } else {
       res.status(500).send("No body in response");
     }

@@ -74,10 +74,14 @@ export default function App() {
     setChannels([]);
   };
 
-  if (loading && !user) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-200">
+        <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-6" />
+        <h2 className="text-xl font-semibold mb-2 tracking-tight">Chargement des chaînes...</h2>
+        <p className="text-slate-500 text-sm max-w-md text-center">
+          Veuillez patienter. La récupération d'une liste IPTV complète (souvent plusieurs milliers de chaînes) peut prendre quelques instants.
+        </p>
       </div>
     );
   }
