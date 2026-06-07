@@ -14,15 +14,21 @@ export function Login({ onLogin }: { onLogin: (user: User) => void }) {
     setLoading(true);
     setError('');
 
+    let formattedUrl = serverUrl.trim();
+    if (formattedUrl && !formattedUrl.startsWith('http://') && !formattedUrl.startsWith('https://')) {
+      formattedUrl = 'http://' + formattedUrl;
+    }
+
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ serverUrl, username, password })
+        body: JSON.stringify({ serverUrl: formattedUrl, username, password })
       });
 
       if (!res.ok) {
-        throw new Error('Invalid credentials or server URL');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Invalid credentials or server URL');
       }
 
       const data = await res.json();
@@ -61,7 +67,7 @@ export function Login({ onLogin }: { onLogin: (user: User) => void }) {
             <div className="relative">
               <Server className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
               <input 
-                type="url" 
+                type="text" 
                 value={serverUrl}
                 onChange={e => setServerUrl(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
